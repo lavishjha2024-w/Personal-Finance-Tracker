@@ -1,13 +1,13 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { useTheme } from '../../contexts/ThemeContext';
 import './Sidebar.css';
 
 const Sidebar = () => {
   const { isDarkMode } = useTheme();
+  const navigate = useNavigate();
 
   const menuItems = [
-    { path: '/', icon: '📊', label: 'Dashboard' },
     { path: '/portfolio', icon: '💼', label: 'Portfolio' },
     { path: '/expenses', icon: '💰', label: 'Expenses' },
     { path: '/flowchart', icon: '📈', label: 'Asset Flowchart' },
@@ -20,7 +20,7 @@ const Sidebar = () => {
 
   return (
     <aside className={`sidebar ${isDarkMode ? 'dark' : 'light'}`}>
-      <div className="sidebar-header">
+      <div className="sidebar-header" onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
         <h2>💰 Finance Tracker</h2>
       </div>
       <nav className="sidebar-nav">
