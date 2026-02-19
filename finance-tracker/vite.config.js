@@ -6,8 +6,3 @@ export default defineConfig({
   base: "/Personal-Finance-Tracker/",
 })
 
-"scripts": {
-  "predeploy": "npm run build",
-  "deploy": "gh-pages -d dist"
-}
-
