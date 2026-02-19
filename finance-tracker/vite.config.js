@@ -5,3 +5,9 @@ export default defineConfig({
   plugins: [react()],
   base: "/Personal-Finance-Tracker/",
 })
+
+"scripts": {
+  "predeploy": "npm run build",
+  "deploy": "gh-pages -d dist"
+}
+
