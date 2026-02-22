@@ -135,7 +135,7 @@ const Gamification = () => {
   const achievements = [
     {
       id: 1,
-      name: 'First Steps',
+      name: 'First Step',
       description: 'Added your first transaction',
       achieved: transactions.length > 0,
       icon: '🎯',
@@ -149,15 +149,15 @@ const Gamification = () => {
     },
     {
       id: 3,
-      name: 'Week Warrior',
-      description: '7 days spending streak',
+      name: 'Week Streak',
+      description: '7 days budget streak',
       achieved: streak >= 7,
       icon: '🔥',
     },
     {
       id: 4,
       name: 'Month Master',
-      description: '30 days spending streak',
+      description: '30 days budget streak',
       achieved: streak >= 30,
       icon: '💪',
     },
@@ -200,7 +200,7 @@ const Gamification = () => {
         <div className="streak-card">
           <div className="streak-icon">🔥</div>
           <div className="streak-content">
-            <h3>Spending Streak</h3>
+            <h3>Budget Streak</h3>
             <p className="streak-days">{streak} days</p>
             <p className="streak-description">Days under budget</p>
             {streak > 0 && (
@@ -261,7 +261,7 @@ const Gamification = () => {
       </div>
 
       <div className="leaderboard-section">
-        <h3>Monthly Finance Leaderboard</h3>
+        <h3>Monthly Leaderboard</h3>
         <div className="leaderboard-card">
           <div className="leaderboard-item rank-1">
             <div className="rank-number">1</div>
