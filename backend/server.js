@@ -9,7 +9,7 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const SECRET_KEY = process.env.JWT_SECRET || 'new_secret_key_to_force_logout_123';
 
-app.use(cors({ origin: ['https://fin-tracker-test-ruddy.vercel.app', 'http://localhost:3000'] }));
+app.use(cors({ origin: 'https://fin-tracker-test-ruddy.vercel.app' }));
 app.use(express.json());
 
 // Signup route
