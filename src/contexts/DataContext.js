@@ -69,13 +69,14 @@ export const DataProvider = ({ children }) => {
   };
 
   const addTransaction = (transaction) => {
-    const category = autoCategorize(transaction);
-    setTransactions([{ ...transaction, id: Date.now(), category: category.name }, ...transactions]);
+    // Only auto-categorize if the user didn't provide a category
+    const category = transaction.category ? transaction.category : autoCategorize(transaction).name;
+    setTransactions([{ ...transaction, id: Date.now(), category: category }, ...transactions]);
   };
 
   const updateTransaction = (id, updates) => {
     setTransactions(transactions.map(t => t.id === id ? { ...t, ...updates } : t));
-    
+
     // Learn from manual categorization
     if (updates.category && updates.merchant) {
       setLearnedMappings({
@@ -91,7 +92,7 @@ export const DataProvider = ({ children }) => {
 
   const autoCategorize = (transaction) => {
     const merchant = transaction.merchant?.toLowerCase() || '';
-    
+
     // Check learned mappings first
     if (learnedMappings[merchant]) {
       return categories.find(c => c.name === learnedMappings[merchant]) || categories[0];

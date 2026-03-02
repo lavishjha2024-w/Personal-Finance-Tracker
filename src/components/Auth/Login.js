@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
 import './Auth.css';
@@ -10,6 +10,40 @@ const Login = () => {
     const [loading, setLoading] = useState(false);
     const { login } = useContext(AuthContext);
     const navigate = useNavigate();
+
+    // -- Animation States --
+    const [animationState, setAnimationState] = useState('walking'); // walking, dropped, exiting, done
+    const [showForm, setShowForm] = useState(false);
+
+    useEffect(() => {
+        const hasSeenAnimation = sessionStorage.getItem('hasSeenAuthAnimation');
+
+        if (hasSeenAnimation) {
+            // Already saw the animation this session, skip straight to the form
+            setAnimationState('done');
+            setShowForm(true);
+            return;
+        }
+
+        // Run the animation sequence on mount
+        const dropTimer = setTimeout(() => {
+            setAnimationState('dropped');
+
+            const exitTimer = setTimeout(() => {
+                setAnimationState('exiting');
+                setShowForm(true);
+                sessionStorage.setItem('hasSeenAuthAnimation', 'true');
+
+                const doneTimer = setTimeout(() => {
+                    setAnimationState('done');
+                }, 800);
+            }, 800);
+        }, 2500);
+
+        return () => {
+            clearTimeout(dropTimer);
+        };
+    }, []);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -40,7 +74,23 @@ const Login = () => {
 
     return (
         <div className="auth-container">
-            <div className="auth-card">
+            {/* 3D Landing Sequence */}
+            {(animationState !== 'done' && animationState !== 'hidden') && (
+                <div className={`scene ${animationState === 'done' ? 'done' : ''}`}>
+                    <div
+                        className={`character-wrapper ${animationState === 'exiting' ? 'scene-exit' : ''}`}
+                        style={{ animationPlayState: animationState === 'dropped' || animationState === 'exiting' ? 'paused' : 'running' }}
+                    >
+                        <div
+                            className="man"
+                            style={{ animationPlayState: animationState === 'dropped' || animationState === 'exiting' ? 'paused' : 'running' }}
+                        >👱‍♂️</div>
+                        <div className={`bag ${animationState === 'dropped' || animationState === 'exiting' ? 'bag-drop' : ''}`}>💼</div>
+                    </div>
+                </div>
+            )}
+
+            <div className={`auth-card ${showForm ? 'show-form' : ''}`}>
                 <h2>Welcome Back</h2>
                 <p className="auth-subtitle">Login to your dashboard</p>
 
