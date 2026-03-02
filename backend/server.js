@@ -9,7 +9,7 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const SECRET_KEY = process.env.JWT_SECRET || 'new_secret_key_to_force_logout_123';
 
-app.use(cors());
+app.use(cors({ origin: ['https://fin-tracker-test-ruddy.vercel.app', 'http://localhost:3000'] }));
 app.use(express.json());
 
 // Signup route
@@ -32,7 +32,7 @@ app.post('/api/signup', async (req, res) => {
                 return res.status(400).json({ error: 'Username or email already exists' });
             }
             console.error(dbErr);
-            return res.status(500).json({ error: 'Database error' });
+            return res.status(500).json({ error: 'Database error', details: dbErr.message || dbErr });
         }
     } catch (err) {
         console.error(err);
@@ -88,6 +88,12 @@ app.get('/api/user', (req, res) => {
     });
 });
 
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});
+app.get('/', (req, res) => res.send('Finance Tracker Backend API is running!'));
+
+if (process.env.NODE_ENV !== 'production') {
+    app.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
+    });
+}
+
+module.exports = app;

@@ -6,7 +6,7 @@ require('dotenv').config();
 // otherwise fallback to a local postgres database.
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/finance_tracker',
-  ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false // Need SSL for Render
+  ssl: { rejectUnauthorized: false }
 });
 
 pool.on('error', (err, client) => {
@@ -31,7 +31,9 @@ const initDb = async () => {
   }
 };
 
-initDb();
+if (process.env.NODE_ENV !== 'production') {
+  initDb();
+}
 
 module.exports = {
   query: (text, params) => pool.query(text, params),
