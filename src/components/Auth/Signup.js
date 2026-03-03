@@ -18,9 +18,7 @@ const Signup = () => {
 
     useEffect(() => {
         const hasSeenAnimation = sessionStorage.getItem('hasSeenAuthAnimation');
-
         if (hasSeenAnimation) {
-            // Already saw the animation this session, skip straight to the form
             setAnimationState('done');
             setShowForm(true);
             return;

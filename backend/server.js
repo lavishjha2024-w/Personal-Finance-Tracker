@@ -9,7 +9,18 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const SECRET_KEY = process.env.JWT_SECRET || 'new_secret_key_to_force_logout_123';
 
-app.use(cors({ origin: 'https://fin-tracker-test-ruddy.vercel.app' }));
+// Allow both local deployment and production deployment
+const allowedOrigins = ['http://localhost:3000', 'https://fin-tracker-test-ruddy.vercel.app'];
+
+app.use(cors({
+    origin: function (origin, callback) {
+        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    }
+}));
 app.use(express.json());
 
 // Signup route

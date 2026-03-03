@@ -1,5 +1,6 @@
 {
   "name": "personal-finance-tracker",
+  "homepage": "https://fin-tracker-test-ruddy.vercel.app",
   "version": "1.0.0",
   "description": "A comprehensive personal finance tracking application",
   "private": true,

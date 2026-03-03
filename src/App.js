@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Outlet } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { DataProvider } from './contexts/DataContext';
@@ -24,11 +24,25 @@ import ProtectedRoute from './components/Auth/ProtectedRoute';
 import './App.css';
 
 const MainLayout = () => {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  const toggleSidebar = () => {
+    setIsSidebarOpen(prev => !prev);
+  };
+
+  const closeSidebar = () => {
+    setIsSidebarOpen(false);
+  };
+
   return (
     <div className="app">
-      <Sidebar />
+      {/* Mobile overlay */}
+      {isSidebarOpen && (
+        <div className="mobile-overlay" onClick={closeSidebar}></div>
+      )}
+      <Sidebar isOpen={isSidebarOpen} closeSidebar={closeSidebar} />
       <div className="main-content">
-        <Header />
+        <Header toggleSidebar={toggleSidebar} />
         <Outlet />
       </div>
     </div>

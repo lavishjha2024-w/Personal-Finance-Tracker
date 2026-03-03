@@ -2,7 +2,7 @@
   position: fixed;
   left: 0;
   top: 0;
-  width: 250px;
+  width: 17rem;
   height: 100vh;
   overflow-y: auto;
   transition: all 0.3s ease;
@@ -43,6 +43,9 @@
   -webkit-text-fill-color: transparent;
   background-clip: text;
   color: goldenrod;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .sidebar-nav {

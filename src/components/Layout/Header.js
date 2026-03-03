@@ -2,13 +2,22 @@ import React from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
 import './Header.css';
 
-const Header = () => {
+const Header = ({ toggleSidebar }) => {
   const { isDarkMode, toggleTheme, fontSize, increaseFontSize, decreaseFontSize } = useTheme();
 
   return (
     <header className={`header ${isDarkMode ? 'dark' : 'light'}`}>
       <div className="header-content">
-        <h1 className="header-title">Personal Finance Tracker</h1>
+        <div className="header-title-container">
+          <button
+            className="mobile-menu-btn"
+            onClick={toggleSidebar}
+            title="Toggle menu"
+          >
+            ☰
+          </button>
+          <h1 className="header-title">Personal Finance Tracker</h1>
+        </div>
         <div className="header-controls">
           <div className="font-size-controls">
             <button

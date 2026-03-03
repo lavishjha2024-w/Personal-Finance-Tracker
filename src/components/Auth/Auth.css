@@ -215,3 +215,46 @@
   opacity: 1 !important;
   transform: rotateX(0) translateY(0) scale(1) !important;
 }
+
+/* --- Mobile Responsiveness for 3D Animation --- */
+@media (max-width: 768px) {
+  .character-wrapper {
+    transform: translateX(-150vw) scale(0.9);
+    animation: walkToCenterTablet 2.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+  }
+
+  .scene-exit {
+    transform: translateY(-50px) scale(1.2) !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .character-wrapper {
+    transform: translateX(-150vw) scale(0.65);
+    animation: walkToCenterMobile 2.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+  }
+
+  .scene-exit {
+    transform: translateY(-50px) scale(0.8) !important;
+  }
+}
+
+@keyframes walkToCenterTablet {
+  0% {
+    transform: translateX(-150vw) scale(0.9);
+  }
+
+  100% {
+    transform: translateX(0) scale(0.9);
+  }
+}
+
+@keyframes walkToCenterMobile {
+  0% {
+    transform: translateX(-150vw) scale(0.65);
+  }
+
+  100% {
+    transform: translateX(0) scale(0.65);
+  }
+}

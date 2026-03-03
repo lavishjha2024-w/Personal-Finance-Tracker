@@ -5,7 +5,7 @@ import { AuthContext } from '../../contexts/AuthContext';
 import { useContext } from 'react';
 import './Sidebar.css';
 
-const Sidebar = () => {
+const Sidebar = ({ isOpen, closeSidebar }) => {
   const { isDarkMode } = useTheme();
   const navigate = useNavigate();
 
@@ -23,7 +23,7 @@ const Sidebar = () => {
   ];
 
   return (
-    <aside className={`sidebar ${isDarkMode ? 'dark' : 'light'}`}>
+    <aside className={`sidebar ${isDarkMode ? 'dark' : 'light'} ${isOpen ? 'open' : ''}`}>
       <div className="sidebar-header" onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
         <h2>💰 Finance Tracker</h2>
       </div>
@@ -33,6 +33,7 @@ const Sidebar = () => {
           <NavLink
             key={item.path}
             to={item.path}
+            onClick={closeSidebar}
             className={({ isActive }) =>
               `nav-item ${isActive ? 'active' : ''}`
             }

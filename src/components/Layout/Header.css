@@ -26,6 +26,32 @@
   align-items: center;
 }
 
+.header-title-container {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.mobile-menu-btn {
+  display: none;
+  background: transparent;
+  border: none;
+  font-size: 1.8rem;
+  font-weight: bold;
+  cursor: pointer;
+  color: goldenrod;
+  padding: 5px;
+  line-height: 1;
+}
+
+.header.dark .mobile-menu-btn {
+  color: #e0e0e0;
+}
+
+.header.light .mobile-menu-btn {
+  color: #333;
+}
+
 .header-title {
   font-size: 1.8rem;
   font-weight: 700;
@@ -109,6 +135,10 @@
 }
 
 @media (max-width: 768px) {
+  .mobile-menu-btn {
+    display: block;
+  }
+
   .header-title {
     font-size: 1.2rem;
   }
