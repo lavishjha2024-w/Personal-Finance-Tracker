@@ -1,9 +1,8 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
+import axios from 'axios';
 import './Auth.css';
-
-const API_BASE_URL = (process.env.REACT_APP_API_URL || '').replace(/\/$/, '');
 
 const Login = () => {
     const [email, setEmail] = useState('');
@@ -14,7 +13,7 @@ const Login = () => {
     const navigate = useNavigate();
 
     // -- Animation States --
-    const [animationState, setAnimationState] = useState('walking'); // walking, dropped, exiting, done
+    const [animationState, setAnimationState] = useState('walking');
     const [showForm, setShowForm] = useState(false);
 
     useEffect(() => {
@@ -25,7 +24,6 @@ const Login = () => {
             return;
         }
 
-        // Run the animation sequence on mount
         const dropTimer = setTimeout(() => {
             setAnimationState('dropped');
 
@@ -51,22 +49,21 @@ const Login = () => {
         setLoading(true);
 
         try {
-            const response = await fetch(`${API_BASE_URL}/api/login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password })
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.details || data.error || 'Login failed');
-            }
+            const { data } = await axios.post(
+                `${process.env.REACT_APP_API_URL}/api/login`,
+                { email, password }
+            );
 
             login(data.token, data.user);
             navigate('/');
+
         } catch (err) {
-            setError(err.message);
+            setError(
+                err.response?.data?.details ||
+                err.response?.data?.error ||
+                err.message ||
+                'Login failed'
+            );
         } finally {
             setLoading(false);
         }
@@ -107,6 +104,7 @@ const Login = () => {
                             required
                         />
                     </div>
+
                     <div className="form-group">
                         <label>Password</label>
                         <input
@@ -117,6 +115,7 @@ const Login = () => {
                             required
                         />
                     </div>
+
                     <button type="submit" className="auth-button" disabled={loading}>
                         {loading ? 'Logging in...' : 'Login'}
                     </button>
