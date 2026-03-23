@@ -54,16 +54,12 @@ const Signup = () => {
                 throw new Error('Please fill in all fields');
             }
 
-            const { session } = await signup(username, email, password);
+            await signup(username, email, password);
 
-            setSuccessMessage(
-                session
-                    ? 'Account successfully created! Redirecting...'
-                    : 'Account created. Please verify your email, then login.'
-            );
+            setSuccessMessage('Account ready. Redirecting...');
 
             setTimeout(() => {
-                navigate(session ? '/' : '/login');
+                navigate('/');
             }, 2000);
 
         } catch (err) {

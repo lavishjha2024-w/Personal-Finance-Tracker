@@ -5,6 +5,7 @@ const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
 const { supabase } = require('./supabase');
+const { devSignupConfirmedUser } = require('./devAuthSignup');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -24,19 +25,10 @@ const corsOrigins = FRONTEND_URL
 app.use(cors({
     origin: corsOrigins,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"]
+    allowedHeaders: ["Content-Type", "Authorization", "X-Dev-Supabase-Redirect"]
 }));
 
 app.use(express.json());
-
-
-const isUniqueViolation = (err) => {
-    if (!err) return false;
-    const code = String(err.code || '');
-    const msg = String(err.message || '');
-    const details = String(err.details || '');
-    return code === '23505' || msg.includes('duplicate key') || details.includes('already exists');
-};
 
 
 app.get('/', (req, res) => {
@@ -73,39 +65,18 @@ app.post('/api/signup', async (req, res) => {
     }
 
     try {
-        const hashedPassword = await bcrypt.hash(password, 10);
-
-        const { data, error } = await supabase
-            .from('pft_users')
-            .insert({ username, email, password: hashedPassword })
-            .select('id')
-            .single();
-
-        if (error) {
-            if (isUniqueViolation(error)) {
-                return res.status(400).json({
-                    error: 'Username or email already exists'
-                });
-            }
-            throw error;
-        }
+        const user = await devSignupConfirmedUser(supabase, { username, email, password });
 
         return res.status(201).json({
-            message: 'User registered successfully',
-            userId: data.id
+            ok: true,
+            userId: user?.id || null
         });
 
     } catch (err) {
         console.error("❌ Signup error:", err);
 
-        if (isUniqueViolation(err)) {
-            return res.status(400).json({
-                error: 'Username or email already exists'
-            });
-        }
-
         return res.status(500).json({
-            error: 'Database error',
+            error: 'Signup failed',
             details: err.message
         });
     }

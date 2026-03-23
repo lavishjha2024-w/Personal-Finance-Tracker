@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect } from 'react';
-import { supabase } from '../lib/supabaseClient';
+import { supabase, DEV_SUPABASE_DUMMY_REDIRECT } from '../lib/supabaseClient';
 
 export const AuthContext = createContext();
 
@@ -72,21 +72,23 @@ export const AuthProvider = ({ children }) => {
             throw new Error('Supabase is not configured');
         }
 
-        const { data, error } = await supabase.auth.signUp({
-            email,
-            password,
-            options: {
-                data: {
-                    username,
-                },
+        const res = await fetch('/api/signup', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Dev-Supabase-Redirect': DEV_SUPABASE_DUMMY_REDIRECT,
             },
+            body: JSON.stringify({ username, email, password }),
         });
 
-        if (error) {
-            throw error;
+        const body = await res.json().catch(() => ({}));
+
+        if (!res.ok) {
+            const msg = body.details || body.error || 'Signup failed';
+            throw new Error(typeof msg === 'string' ? msg : 'Signup failed');
         }
 
-        return data;
+        return login(email, password);
     };
 
     const logout = async () => {
