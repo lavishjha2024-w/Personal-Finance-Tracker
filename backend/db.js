@@ -1,4 +1,5 @@
 const { Pool } = require('pg');
+const dns = require('dns');
 const fs = require('fs');
 const path = require('path');
 const dotenv = require('dotenv');
@@ -46,10 +47,14 @@ const rejectUnauthorizedFinal =
     : false;
 const ssl = sslEnabled ? { rejectUnauthorized: rejectUnauthorizedFinal } : undefined;
 const ipFamily = Number.parseInt(process.env.DATABASE_IP_FAMILY || '4', 10);
+const lookupFamily = Number.isNaN(ipFamily) ? 4 : ipFamily;
 
 const pool = new Pool({
   connectionString: databaseUrl,
-  family: Number.isNaN(ipFamily) ? 4 : ipFamily,
+  family: lookupFamily,
+  lookup: (hostname, _options, callback) => {
+    dns.lookup(hostname, { family: lookupFamily, all: false }, callback);
+  },
   ssl
 });
 
