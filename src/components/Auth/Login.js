@@ -1,8 +1,6 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
-import axios from 'axios';
-import { API_BASE_URL } from '../../config/api';
 import './Auth.css';
 
 const Login = () => {
@@ -50,22 +48,11 @@ const Login = () => {
         setLoading(true);
 
         try {
-            if (!API_BASE_URL) {
-                throw new Error('REACT_APP_API_URL is not configured');
-            }
-
-            const { data } = await axios.post(
-                `${API_BASE_URL}/api/login`,
-                { email, password }
-            );
-
-            login(data.token, data.user);
+            await login(email, password);
             navigate('/');
 
         } catch (err) {
             setError(
-                err.response?.data?.details ||
-                err.response?.data?.error ||
                 err.message ||
                 'Login failed'
             );

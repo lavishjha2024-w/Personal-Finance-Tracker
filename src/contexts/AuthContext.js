@@ -5,37 +5,100 @@ export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
-    const [token, setToken] = useState(localStorage.getItem('token'));
+    const [token, setToken] = useState(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        if (token) {
-            const savedUser = localStorage.getItem('user');
-            if (savedUser) {
-                setUser(JSON.parse(savedUser));
-            } else {
-                logout();
-            }
+        if (!supabase) {
+            setUser(null);
+            setToken(null);
+            setLoading(false);
+            return undefined;
         }
-        setLoading(false);
-    }, [token]);
 
-    const login = (newToken, userData) => {
-        localStorage.setItem('token', newToken);
-        localStorage.setItem('user', JSON.stringify(userData));
-        setToken(newToken);
-        setUser(userData);
+        const normalizeUser = (authUser) => {
+            if (!authUser) return null;
+            const username =
+                authUser.user_metadata?.username ||
+                authUser.email?.split('@')[0] ||
+                'User';
+            return {
+                id: authUser.id,
+                username,
+                email: authUser.email || '',
+            };
+        };
+
+        const bootstrap = async () => {
+            const { data } = await supabase.auth.getSession();
+            const session = data?.session || null;
+            setToken(session?.access_token || null);
+            setUser(normalizeUser(session?.user || null));
+            setLoading(false);
+        };
+
+        bootstrap();
+
+        const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+            setToken(session?.access_token || null);
+            setUser(normalizeUser(session?.user || null));
+            setLoading(false);
+        });
+
+        return () => {
+            authListener.subscription.unsubscribe();
+        };
+    }, []);
+
+    const login = async (email, password) => {
+        if (!supabase) {
+            throw new Error('Supabase is not configured');
+        }
+
+        const { data, error } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+        });
+
+        if (error) {
+            throw error;
+        }
+
+        return data;
     };
 
-    const logout = () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+    const signup = async (username, email, password) => {
+        if (!supabase) {
+            throw new Error('Supabase is not configured');
+        }
+
+        const { data, error } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+                data: {
+                    username,
+                },
+            },
+        });
+
+        if (error) {
+            throw error;
+        }
+
+        return data;
+    };
+
+    const logout = async () => {
+        if (supabase) {
+            await supabase.auth.signOut();
+        }
         setToken(null);
         setUser(null);
     };
 
     return (
-        <AuthContext.Provider value={{ user, token, loading, login, logout, supabase }}>
+        <AuthContext.Provider value={{ user, token, loading, login, signup, logout, supabase }}>
             {children}
         </AuthContext.Provider>
     );

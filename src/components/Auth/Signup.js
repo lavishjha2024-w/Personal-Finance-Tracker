@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
-import { API_BASE_URL } from '../../config/api';
+import { AuthContext } from '../../contexts/AuthContext';
 import './Auth.css';
 
 const Signup = () => {
@@ -12,6 +11,7 @@ const Signup = () => {
     const [successMessage, setSuccessMessage] = useState('');
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
+    const { signup } = useContext(AuthContext);
 
     // -- Animation States --
     const [animationState, setAnimationState] = useState('walking');
@@ -50,29 +50,24 @@ const Signup = () => {
         setLoading(true);
 
         try {
-            if (!API_BASE_URL) {
-                throw new Error('REACT_APP_API_URL is not configured');
-            }
-
             if (!email || !password || !username) {
                 throw new Error('Please fill in all fields');
             }
 
-            await axios.post(
-                `${API_BASE_URL}/api/signup`,
-                { username, email, password }
+            const { session } = await signup(username, email, password);
+
+            setSuccessMessage(
+                session
+                    ? 'Account successfully created! Redirecting...'
+                    : 'Account created. Please verify your email, then login.'
             );
 
-            setSuccessMessage('Account successfully created! Redirecting to login...');
-
             setTimeout(() => {
-                navigate('/login');
+                navigate(session ? '/' : '/login');
             }, 2000);
 
         } catch (err) {
             setError(
-                err.response?.data?.details ||
-                err.response?.data?.error ||
                 err.message ||
                 'Signup failed'
             );
