@@ -1,4 +1,8 @@
 const { createClient } = require('@supabase/supabase-js');
+const {
+  getSupabaseServerUrl,
+  getSupabaseServiceRoleKey,
+} = require('../lib/supabaseServerEnv');
 
 async function findAuthUserIdByEmail(adminClient, email) {
   const normalized = String(email || '').trim().toLowerCase();
@@ -27,7 +31,10 @@ async function findAuthUserIdByEmail(adminClient, email) {
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    'Content-Type, X-Dev-Supabase-Redirect'
+  );
 
   if (req.method === 'OPTIONS') {
     return res.status(204).end();
@@ -37,11 +44,14 @@ module.exports = async (req, res) => {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const supabaseUrl = (process.env.SUPABASE_URL || '').trim();
-  const serviceKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY || '').trim();
+  const supabaseUrl = getSupabaseServerUrl();
+  const serviceKey = getSupabaseServiceRoleKey();
 
   if (!supabaseUrl || !serviceKey) {
-    return res.status(500).json({ error: 'Server missing SUPABASE_URL or service role key' });
+    return res.status(500).json({
+      error:
+        'Server missing Supabase URL or key. Set SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY (or REACT_APP_SUPABASE_URL + REACT_APP_SUPABASE_KEY) in Vercel project env for Functions.',
+    });
   }
 
   const supabase = createClient(supabaseUrl, serviceKey, {

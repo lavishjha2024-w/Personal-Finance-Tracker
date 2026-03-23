@@ -1,8 +1,10 @@
+const path = require('path');
 const express = require('express');
 const cors = require('cors');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-require('dotenv').config();
+require('dotenv').config({ path: path.join(__dirname, '.env') });
+require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
 const { supabase } = require('./supabase');
 const { devSignupConfirmedUser } = require('./devAuthSignup');
