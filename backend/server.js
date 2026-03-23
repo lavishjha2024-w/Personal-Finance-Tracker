@@ -2,152 +2,188 @@ const express = require('express');
 const cors = require('cors');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const fs = require('fs');
-const path = require('path');
-const dotenv = require('dotenv');
+require('dotenv').config();
 
-// Vercel won't automatically load `backend/.env` (dotenv looks in the CWD by default).
-// Load it only when the hosting env vars aren't already provided.
-const loadEnvIfMissing = () => {
-    if (process.env.JWT_SECRET) return;
-
-    const vercelEnvPath = path.join(__dirname, '.env.vercel.prod');
-    const localEnvPath = path.join(__dirname, '.env');
-
-    if (process.env.VERCEL === '1' && fs.existsSync(vercelEnvPath)) {
-        dotenv.config({ path: vercelEnvPath, override: false });
-    }
-
-    if (!process.env.JWT_SECRET && fs.existsSync(localEnvPath)) {
-        dotenv.config({ path: localEnvPath, override: false });
-    }
-};
-
-loadEnvIfMissing();
 const db = require('./db');
 
 const app = express();
-const PORT = Number(process.env.PORT) || 5000;
+const PORT = process.env.PORT || 5000;
 
-const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL === '1';
-const JWT_SECRET = process.env.JWT_SECRET || (isProduction ? undefined : 'new_secret_key_to_force_logout_123');
+
+const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
-    // Fail-safe: do not crash on import, but endpoints that need JWT will error clearly.
-    console.warn('[backend] Missing JWT_SECRET (set it in your hosting environment).');
+    console.error('❌ JWT_SECRET is missing in environment variables');
 }
 
-const corsOrigins = (process.env.CORS_ORIGINS || '')
-    .split(',')
-    .map(s => s.trim())
-    .filter(Boolean);
 
 app.use(cors({
-    origin: function (origin, callback) {
-        // Allow requests without an Origin header (e.g., curl, server-to-server).
-        if (!origin) return callback(null, true);
-
-        // If CORS_ORIGINS isn't configured, allow all origins to avoid breaking deployments.
-        if (corsOrigins.length === 0) return callback(null, true);
-
-        if (corsOrigins.includes(origin)) return callback(null, true);
-        return callback(new Error(`Not allowed by CORS: ${origin}`));
-    },
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    optionsSuccessStatus: 204
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"]
 }));
+
 app.use(express.json());
 
-// Signup route
+
+app.get('/', (req, res) => {
+    res.send('🚀 Finance Tracker Backend is running');
+});
+
+
+app.get('/api/test-db', async (req, res) => {
+    try {
+        const result = await db.query('SELECT NOW()');
+        res.json({ success: true, time: result.rows[0] });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'DB connection failed', details: err.message });
+    }
+});
+
+
 app.post('/api/signup', async (req, res) => {
     const { username, email, password } = req.body;
+
+    console.log("📥 Signup request:", { username, email });
+
     if (!username || !email || !password) {
         return res.status(400).json({ error: 'All fields are required' });
     }
 
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
-        const sql = 'INSERT INTO public.pft_users (username, email, password) VALUES ($1, $2, $3) RETURNING id';
 
-        try {
-            const result = await db.query(sql, [username, email, hashedPassword]);
-            res.status(201).json({ message: 'User registered successfully', userId: result.rows[0].id });
-        } catch (dbErr) {
-            // Postgres unique constraint violation
-            if (dbErr.code === '23505') {
-                return res.status(400).json({ error: 'Username or email already exists' });
-            }
-            console.error(dbErr);
-            return res.status(500).json({ error: 'Database error', details: dbErr.message || dbErr });
-        }
+        const sql = `
+            INSERT INTO public.pft_users (username, email, password)
+            VALUES ($1, $2, $3)
+            RETURNING id
+        `;
+
+        const result = await db.query(sql, [username, email, hashedPassword]);
+
+        return res.status(201).json({
+            message: 'User registered successfully',
+            userId: result.rows[0].id
+        });
+
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: 'Server error' });
+        console.error("❌ Signup error:", err);
+
+        // Unique constraint error
+        if (err.code === '23505') {
+            return res.status(400).json({
+                error: 'Username or email already exists'
+            });
+        }
+
+        return res.status(500).json({
+            error: 'Database error',
+            details: err.message
+        });
     }
 });
 
-// Login route
 app.post('/api/login', async (req, res) => {
     const { email, password } = req.body;
+
+    console.log("🔐 Login request:", { email });
+
     if (!email || !password) {
-        return res.status(400).json({ error: 'Email and password are required' });
+        return res.status(400).json({
+            error: 'Email and password are required'
+        });
     }
 
     try {
         const sql = 'SELECT * FROM public.pft_users WHERE email = $1';
         const result = await db.query(sql, [email]);
+
         const user = result.rows[0];
 
-        if (!user) return res.status(400).json({ error: 'Invalid email or password' });
+        if (!user) {
+            return res.status(400).json({
+                error: 'Invalid email or password'
+            });
+        }
 
         const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) return res.status(400).json({ error: 'Invalid email or password' });
+
+        if (!isMatch) {
+            return res.status(400).json({
+                error: 'Invalid email or password'
+            });
+        }
 
         if (!JWT_SECRET) {
-            return res.status(500).json({ error: 'JWT_SECRET is not configured on the server' });
+            return res.status(500).json({
+                error: 'JWT_SECRET not configured'
+            });
         }
-        const token = jwt.sign({ id: user.id, username: user.username, email: user.email }, JWT_SECRET, { expiresIn: '1h' });
-        res.json({ message: 'Login successful', token, user: { id: user.id, username: user.username, email: user.email } });
+
+        const token = jwt.sign(
+            { id: user.id, username: user.username, email: user.email },
+            JWT_SECRET,
+            { expiresIn: '1h' }
+        );
+
+        return res.json({
+            message: 'Login successful',
+            token,
+            user: {
+                id: user.id,
+                username: user.username,
+                email: user.email
+            }
+        });
+
     } catch (err) {
-        console.error(err);
-        return res.status(500).json({ error: 'Database error', details: err && err.message ? err.message : String(err) });
+        console.error("❌ Login error:", err);
+
+        return res.status(500).json({
+            error: 'Database error',
+            details: err.message
+        });
     }
 });
 
-// Get user profile route (protected)
-app.get('/api/user', (req, res) => {
+
+app.get('/api/user', async (req, res) => {
     const authHeader = req.headers.authorization;
-    if (!authHeader) return res.status(401).json({ error: 'No token provided' });
+
+    if (!authHeader) {
+        return res.status(401).json({ error: 'No token provided' });
+    }
 
     const token = authHeader.split(' ')[1];
-    if (!JWT_SECRET) {
-        return res.status(500).json({ error: 'JWT_SECRET is not configured on the server' });
-    }
-    jwt.verify(token, JWT_SECRET, async (err, decoded) => {
-        if (err) return res.status(401).json({ error: 'Invalid token' });
 
-        try {
-            const sql = 'SELECT id, username, email FROM public.pft_users WHERE id = $1';
-            const result = await db.query(sql, [decoded.id]);
-            const user = result.rows[0];
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET);
 
-            if (!user) return res.status(404).json({ error: 'User not found' });
-            res.json(user);
-        } catch (dbErr) {
-            console.error(dbErr);
-            return res.status(500).json({ error: 'Database error', details: dbErr && dbErr.message ? dbErr.message : String(dbErr) });
+        const sql = `
+            SELECT id, username, email 
+            FROM public.pft_users 
+            WHERE id = $1
+        `;
+
+        const result = await db.query(sql, [decoded.id]);
+        const user = result.rows[0];
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
         }
-    });
+
+        return res.json(user);
+
+    } catch (err) {
+        console.error("❌ Auth error:", err);
+
+        return res.status(401).json({
+            error: 'Invalid or expired token'
+        });
+    }
 });
 
-app.get('/', (req, res) => res.send('Finance Tracker Backend API is running!'));
 
-// Local/VM/Container hosting: run `node server.js`
-// Vercel/Serverless: the file is imported, so `require.main !== module`
-if (require.main === module) {
-    app.listen(PORT, () => {
-        console.log(`Server running on port ${PORT}`);
-    });
-}
-
-module.exports = app;
+app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+});
