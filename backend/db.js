@@ -45,9 +45,11 @@ const rejectUnauthorizedFinal =
     ? sslRejectUnauthorized !== 'false'
     : false;
 const ssl = sslEnabled ? { rejectUnauthorized: rejectUnauthorizedFinal } : undefined;
+const ipFamily = Number.parseInt(process.env.DATABASE_IP_FAMILY || '4', 10);
 
 const pool = new Pool({
   connectionString: poolConnectionString,
+  family: Number.isNaN(ipFamily) ? 4 : ipFamily,
   ssl
 });
 
