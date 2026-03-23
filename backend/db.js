@@ -6,7 +6,8 @@ const dotenv = require('dotenv');
 // Vercel won't automatically load `backend/.env` (dotenv looks in the CWD by default).
 // Load it only when the hosting env vars aren't already provided.
 const loadEnvIfMissing = () => {
-  if (process.env.DATABASE_URL) return;
+  const currentDbUrl = (process.env.DATABASE_URL || '').trim();
+  if (currentDbUrl) return;
 
   const vercelEnvPath = path.join(__dirname, '.env.vercel.prod');
   const localEnvPath = path.join(__dirname, '.env');
@@ -15,7 +16,13 @@ const loadEnvIfMissing = () => {
     dotenv.config({ path: vercelEnvPath, override: false });
   }
 
-  if (!process.env.DATABASE_URL && fs.existsSync(localEnvPath)) {
+  const dbUrlAfterVercelLoad = (process.env.DATABASE_URL || '').trim();
+  // Some Vercel-generated files include placeholders like `DATABASE_URL=""`.
+  // Treat empty string as missing and fall back to the local env file.
+  if (!dbUrlAfterVercelLoad && fs.existsSync(localEnvPath)) {
+    // If `DATABASE_URL` already exists (even as ""), `override:false` won't replace it.
+    // Remove it so the next dotenv load can populate the real value.
+    delete process.env.DATABASE_URL;
     dotenv.config({ path: localEnvPath, override: false });
   }
 };
@@ -36,7 +43,12 @@ const sslEnabled = (process.env.DATABASE_SSL !== undefined)
   : databaseLooksManaged;
 
 const sslRejectUnauthorized = process.env.DATABASE_SSL_REJECT_UNAUTHORIZED;
-const ssl = sslEnabled ? { rejectUnauthorized: sslRejectUnauthorized !== 'false' } : undefined;
+// Default to `rejectUnauthorized: false` for managed providers/poolers when not explicitly configured.
+const rejectUnauthorizedFinal =
+  sslRejectUnauthorized !== undefined
+    ? sslRejectUnauthorized !== 'false'
+    : false;
+const ssl = sslEnabled ? { rejectUnauthorized: rejectUnauthorizedFinal } : undefined;
 
 const pool = new Pool({
   connectionString: poolConnectionString,
@@ -55,7 +67,8 @@ const ensureSchemaInitialized = async () => {
 
   schemaInitPromise = (async () => {
     // In production we fail gracefully instead of trying to connect to localhost.
-    if (!databaseUrl && isProduction) {
+    const currentDbUrl = (process.env.DATABASE_URL || '').trim();
+    if (!currentDbUrl && isProduction) {
       throw new Error('DATABASE_URL is required in production.');
     }
 
