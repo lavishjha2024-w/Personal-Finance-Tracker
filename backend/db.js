@@ -26,17 +26,17 @@ const loadEnvIfMissing = () => {
 
 loadEnvIfMissing();
 
-const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL === '1';
 const databaseUrl = (process.env.DATABASE_URL || '').trim();
-
-
-const poolConnectionString = databaseUrl;
+if (!databaseUrl) {
+  throw new Error('DATABASE_URL is required');
+}
 
 // SSL needs vary by provider. Default to SSL when DATABASE_URL looks like a managed PG service.
-const databaseLooksManaged = /supabase\\.com|pooler\\./i.test(poolConnectionString) || /sslmode=|require/i.test(poolConnectionString);
+const databaseLooksManaged = /supabase\.com|pooler\.|render\.com|neon\.tech|railway\./i.test(databaseUrl) || /sslmode=|require/i.test(databaseUrl);
+const isDeployment = process.env.NODE_ENV === 'production' || Boolean(process.env.RENDER) || process.env.VERCEL === '1';
 const sslEnabled = (process.env.DATABASE_SSL !== undefined)
   ? process.env.DATABASE_SSL !== 'false'
-  : databaseLooksManaged;
+  : (databaseLooksManaged || isDeployment);
 
 const sslRejectUnauthorized = process.env.DATABASE_SSL_REJECT_UNAUTHORIZED;
 // Default to `rejectUnauthorized: false` for managed providers/poolers when not explicitly configured.
@@ -48,7 +48,7 @@ const ssl = sslEnabled ? { rejectUnauthorized: rejectUnauthorizedFinal } : undef
 const ipFamily = Number.parseInt(process.env.DATABASE_IP_FAMILY || '4', 10);
 
 const pool = new Pool({
-  connectionString: poolConnectionString,
+  connectionString: databaseUrl,
   family: Number.isNaN(ipFamily) ? 4 : ipFamily,
   ssl
 });
