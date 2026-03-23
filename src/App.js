@@ -23,27 +23,20 @@ import Profile from './components/Profile/Profile';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
 import './App.css';
 
+// Main layout with sidebar and header
 const MainLayout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  const toggleSidebar = () => {
-    setIsSidebarOpen(prev => !prev);
-  };
-
-  const closeSidebar = () => {
-    setIsSidebarOpen(false);
-  };
+  const toggleSidebar = () => setIsSidebarOpen(prev => !prev);
+  const closeSidebar = () => setIsSidebarOpen(false);
 
   return (
     <div className="app">
-      {/* Mobile overlay */}
-      {isSidebarOpen && (
-        <div className="mobile-overlay" onClick={closeSidebar}></div>
-      )}
+      {isSidebarOpen && <div className="mobile-overlay" onClick={closeSidebar}></div>}
       <Sidebar isOpen={isSidebarOpen} closeSidebar={closeSidebar} />
       <div className="main-content">
         <Header toggleSidebar={toggleSidebar} />
-        <Outlet />
+        <Outlet /> {/* Render child routes here */}
       </div>
     </div>
   );
@@ -57,26 +50,29 @@ function App() {
           <OnboardingProvider>
             <Router>
               <Routes>
+                {/* Public routes */}
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
 
+                {/* Protected routes with MainLayout */}
                 <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
-                  <Route path="/" element={
+                  {/* Home / Dashboard */}
+                  <Route index element={
                     <>
                       <OnboardingTour />
                       <Dashboard />
                     </>
                   } />
-                  <Route path="/portfolio" element={<Portfolio />} />
-                  <Route path="/expenses" element={<ExpenseTracker />} />
-                  <Route path="/flowchart" element={<AssetFlowchart />} />
-                  <Route path="/insights" element={<SmartInsights />} />
-                  <Route path="/goals" element={<Goals />} />
-                  <Route path="/analytics" element={<Analytics />} />
-                  <Route path="/investments" element={<Investments />} />
-                  <Route path="/gamification" element={<Gamification />} />
-                  <Route path="/profile" element={<Profile />} />
-                  <Route path="/help" element={<Help />} />
+                  <Route path="portfolio" element={<Portfolio />} />
+                  <Route path="expenses" element={<ExpenseTracker />} />
+                  <Route path="flowchart" element={<AssetFlowchart />} />
+                  <Route path="insights" element={<SmartInsights />} />
+                  <Route path="goals" element={<Goals />} />
+                  <Route path="analytics" element={<Analytics />} />
+                  <Route path="investments" element={<Investments />} />
+                  <Route path="gamification" element={<Gamification />} />
+                  <Route path="profile" element={<Profile />} />
+                  <Route path="help" element={<Help />} />
                 </Route>
               </Routes>
             </Router>
