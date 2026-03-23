@@ -8,6 +8,7 @@ const db = require('./db');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const FRONTEND_URL = process.env.FRONTEND_URL;
 
 
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -16,9 +17,13 @@ if (!JWT_SECRET) {
 }
 
 
+const corsOrigins = FRONTEND_URL
+    ? FRONTEND_URL.split(',').map((origin) => origin.trim()).filter(Boolean)
+    : true;
+
 app.use(cors({
-    origin: "*",
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    origin: corsOrigins,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"]
 }));
 

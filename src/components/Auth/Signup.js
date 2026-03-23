@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
+import { API_BASE_URL } from '../../config/api';
 import './Auth.css';
 
 const Signup = () => {
@@ -53,8 +54,8 @@ const Signup = () => {
                 throw new Error('Please fill in all fields');
             }
 
-            const { data } = await axios.post(
-                `${process.env.REACT_APP_API_URL}/api/signup`,
+            await axios.post(
+                `${API_BASE_URL}/api/signup`,
                 { username, email, password }
             );
 
