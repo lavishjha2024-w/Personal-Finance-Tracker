@@ -1,6 +1,6 @@
 {
   "engines": {
-  "node": "16.x"
+  "node": "24.x"
 },
   "name": "personal-finance-tracker",
   "version": "1.0.0",
