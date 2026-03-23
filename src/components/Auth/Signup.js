@@ -64,7 +64,7 @@ const Signup = () => {
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.error || 'Signup failed');
+                throw new Error(data.details || data.error || 'Signup failed');
             }
 
             setSuccessMessage('Account successfully created! Redirecting to login...');

@@ -1,5 +1,26 @@
 const { Pool } = require('pg');
-require('dotenv').config();
+const fs = require('fs');
+const path = require('path');
+const dotenv = require('dotenv');
+
+// Vercel won't automatically load `backend/.env` (dotenv looks in the CWD by default).
+// Load it only when the hosting env vars aren't already provided.
+const loadEnvIfMissing = () => {
+  if (process.env.DATABASE_URL) return;
+
+  const vercelEnvPath = path.join(__dirname, '.env.vercel.prod');
+  const localEnvPath = path.join(__dirname, '.env');
+
+  if (process.env.VERCEL === '1' && fs.existsSync(vercelEnvPath)) {
+    dotenv.config({ path: vercelEnvPath, override: false });
+  }
+
+  if (!process.env.DATABASE_URL && fs.existsSync(localEnvPath)) {
+    dotenv.config({ path: localEnvPath, override: false });
+  }
+};
+
+loadEnvIfMissing();
 
 const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL === '1';
 const databaseUrl = (process.env.DATABASE_URL || '').trim();

@@ -2,7 +2,28 @@ const express = require('express');
 const cors = require('cors');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-require('dotenv').config();
+const fs = require('fs');
+const path = require('path');
+const dotenv = require('dotenv');
+
+// Vercel won't automatically load `backend/.env` (dotenv looks in the CWD by default).
+// Load it only when the hosting env vars aren't already provided.
+const loadEnvIfMissing = () => {
+    if (process.env.JWT_SECRET) return;
+
+    const vercelEnvPath = path.join(__dirname, '.env.vercel.prod');
+    const localEnvPath = path.join(__dirname, '.env');
+
+    if (process.env.VERCEL === '1' && fs.existsSync(vercelEnvPath)) {
+        dotenv.config({ path: vercelEnvPath, override: false });
+    }
+
+    if (!process.env.JWT_SECRET && fs.existsSync(localEnvPath)) {
+        dotenv.config({ path: localEnvPath, override: false });
+    }
+};
+
+loadEnvIfMissing();
 const db = require('./db');
 
 const app = express();
@@ -89,7 +110,7 @@ app.post('/api/login', async (req, res) => {
         res.json({ message: 'Login successful', token, user: { id: user.id, username: user.username, email: user.email } });
     } catch (err) {
         console.error(err);
-        return res.status(500).json({ error: 'Database error' });
+        return res.status(500).json({ error: 'Database error', details: err && err.message ? err.message : String(err) });
     }
 });
 
@@ -114,7 +135,7 @@ app.get('/api/user', (req, res) => {
             res.json(user);
         } catch (dbErr) {
             console.error(dbErr);
-            return res.status(500).json({ error: 'Database error' });
+            return res.status(500).json({ error: 'Database error', details: dbErr && dbErr.message ? dbErr.message : String(dbErr) });
         }
     });
 });
