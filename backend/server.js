@@ -4,16 +4,16 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
-const db = require('./db');
+const { supabase } = require('./supabase');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 const FRONTEND_URL = process.env.FRONTEND_URL;
 
 
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) {
-    console.error('❌ JWT_SECRET is missing in environment variables');
+const JWT_SECRET = process.env.JWT_SECRET || 'dev_jwt_secret_change_me';
+if (!process.env.JWT_SECRET) {
+    console.warn('⚠️ JWT_SECRET missing; using dev default (local only).');
 }
 
 
@@ -30,6 +30,15 @@ app.use(cors({
 app.use(express.json());
 
 
+const isUniqueViolation = (err) => {
+    if (!err) return false;
+    const code = String(err.code || '');
+    const msg = String(err.message || '');
+    const details = String(err.details || '');
+    return code === '23505' || msg.includes('duplicate key') || details.includes('already exists');
+};
+
+
 app.get('/', (req, res) => {
     res.send('🚀 Finance Tracker Backend is running');
 });
@@ -37,8 +46,16 @@ app.get('/', (req, res) => {
 
 app.get('/api/test-db', async (req, res) => {
     try {
-        const result = await db.query('SELECT NOW()');
-        res.json({ success: true, time: result.rows[0] });
+        const { error } = await supabase
+            .from('pft_users')
+            .select('id')
+            .limit(1);
+
+        if (error) {
+            throw error;
+        }
+
+        res.json({ success: true, supabase: true });
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'DB connection failed', details: err.message });
@@ -58,24 +75,30 @@ app.post('/api/signup', async (req, res) => {
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        const sql = `
-            INSERT INTO public.pft_users (username, email, password)
-            VALUES ($1, $2, $3)
-            RETURNING id
-        `;
+        const { data, error } = await supabase
+            .from('pft_users')
+            .insert({ username, email, password: hashedPassword })
+            .select('id')
+            .single();
 
-        const result = await db.query(sql, [username, email, hashedPassword]);
+        if (error) {
+            if (isUniqueViolation(error)) {
+                return res.status(400).json({
+                    error: 'Username or email already exists'
+                });
+            }
+            throw error;
+        }
 
         return res.status(201).json({
             message: 'User registered successfully',
-            userId: result.rows[0].id
+            userId: data.id
         });
 
     } catch (err) {
         console.error("❌ Signup error:", err);
 
-        // Unique constraint error
-        if (err.code === '23505') {
+        if (isUniqueViolation(err)) {
             return res.status(400).json({
                 error: 'Username or email already exists'
             });
@@ -100,10 +123,15 @@ app.post('/api/login', async (req, res) => {
     }
 
     try {
-        const sql = 'SELECT * FROM public.pft_users WHERE email = $1';
-        const result = await db.query(sql, [email]);
+        const { data: user, error } = await supabase
+            .from('pft_users')
+            .select('*')
+            .eq('email', email)
+            .maybeSingle();
 
-        const user = result.rows[0];
+        if (error) {
+            throw error;
+        }
 
         if (!user) {
             return res.status(400).json({
@@ -119,11 +147,7 @@ app.post('/api/login', async (req, res) => {
             });
         }
 
-        if (!JWT_SECRET) {
-            return res.status(500).json({
-                error: 'JWT_SECRET not configured'
-            });
-        }
+        // JWT_SECRET is defaulted for local dev; in production it should be provided via env vars.
 
         const token = jwt.sign(
             { id: user.id, username: user.username, email: user.email },
@@ -164,14 +188,15 @@ app.get('/api/user', async (req, res) => {
     try {
         const decoded = jwt.verify(token, JWT_SECRET);
 
-        const sql = `
-            SELECT id, username, email 
-            FROM public.pft_users 
-            WHERE id = $1
-        `;
+        const { data: user, error } = await supabase
+            .from('pft_users')
+            .select('id, username, email')
+            .eq('id', decoded.id)
+            .maybeSingle();
 
-        const result = await db.query(sql, [decoded.id]);
-        const user = result.rows[0];
+        if (error) {
+            throw error;
+        }
 
         if (!user) {
             return res.status(404).json({ error: 'User not found' });

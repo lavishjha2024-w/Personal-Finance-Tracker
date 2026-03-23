@@ -18,3 +18,5 @@ Run locally:
 npm install
 npm start
 ```
+
+Backend (`backend/`): set `SUPABASE_URL`, `SUPABASE_KEY` (service role), `JWT_SECRET`, `FRONTEND_URL`. Run `supabase/migrations/001_pft_users.sql` in the Supabase SQL editor once. Then `cd backend && npm install && npm start`.
