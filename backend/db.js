@@ -3,8 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const dotenv = require('dotenv');
 
-// Vercel won't automatically load `backend/.env` (dotenv looks in the CWD by default).
-// Load it only when the hosting env vars aren't already provided.
+
 const loadEnvIfMissing = () => {
   const currentDbUrl = (process.env.DATABASE_URL || '').trim();
   if (currentDbUrl) return;
@@ -17,11 +16,9 @@ const loadEnvIfMissing = () => {
   }
 
   const dbUrlAfterVercelLoad = (process.env.DATABASE_URL || '').trim();
-  // Some Vercel-generated files include placeholders like `DATABASE_URL=""`.
-  // Treat empty string as missing and fall back to the local env file.
+
   if (!dbUrlAfterVercelLoad && fs.existsSync(localEnvPath)) {
-    // If `DATABASE_URL` already exists (even as ""), `override:false` won't replace it.
-    // Remove it so the next dotenv load can populate the real value.
+
     delete process.env.DATABASE_URL;
     dotenv.config({ path: localEnvPath, override: false });
   }
@@ -32,9 +29,8 @@ loadEnvIfMissing();
 const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL === '1';
 const databaseUrl = (process.env.DATABASE_URL || '').trim();
 
-// Local fallback only (used for development). In production you MUST set DATABASE_URL.
-const localConnectionString = 'postgresql://postgres:postgres@localhost:5432/finance_tracker';
-const poolConnectionString = databaseUrl || localConnectionString;
+
+const poolConnectionString = databaseUrl;
 
 // SSL needs vary by provider. Default to SSL when DATABASE_URL looks like a managed PG service.
 const databaseLooksManaged = /supabase\\.com|pooler\\./i.test(poolConnectionString) || /sslmode=|require/i.test(poolConnectionString);
@@ -68,9 +64,9 @@ const ensureSchemaInitialized = async () => {
   schemaInitPromise = (async () => {
     // In production we fail gracefully instead of trying to connect to localhost.
     const currentDbUrl = (process.env.DATABASE_URL || '').trim();
-    if (!currentDbUrl && isProduction) {
-      throw new Error('DATABASE_URL is required in production.');
-    }
+     if (!currentDbUrl) {
+    throw new Error('DATABASE_URL is required');
+  }
 
     await pool.query(`
       CREATE TABLE IF NOT EXISTS public.pft_users (
