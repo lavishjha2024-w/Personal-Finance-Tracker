@@ -1,22 +1,43 @@
 const { Pool } = require('pg');
 require('dotenv').config();
 
-// Config for connecting to PostgreSQL.
-// Use the DATABASE_URL environment variable if provided, 
-// otherwise fallback to a local postgres database.
+const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL === '1';
+const databaseUrl = (process.env.DATABASE_URL || '').trim();
+
+// Local fallback only (used for development). In production you MUST set DATABASE_URL.
+const localConnectionString = 'postgresql://postgres:postgres@localhost:5432/finance_tracker';
+const poolConnectionString = databaseUrl || localConnectionString;
+
+// SSL needs vary by provider. Default to SSL when DATABASE_URL looks like a managed PG service.
+const databaseLooksManaged = /supabase\\.com|pooler\\./i.test(poolConnectionString) || /sslmode=|require/i.test(poolConnectionString);
+const sslEnabled = (process.env.DATABASE_SSL !== undefined)
+  ? process.env.DATABASE_SSL !== 'false'
+  : databaseLooksManaged;
+
+const sslRejectUnauthorized = process.env.DATABASE_SSL_REJECT_UNAUTHORIZED;
+const ssl = sslEnabled ? { rejectUnauthorized: sslRejectUnauthorized !== 'false' } : undefined;
+
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/finance_tracker',
-  ssl: { rejectUnauthorized: false }
+  connectionString: poolConnectionString,
+  ssl
 });
 
-pool.on('error', (err, client) => {
-  console.error('Unexpected error on idle client', err);
-  process.exit(-1);
+pool.on('error', (err) => {
+  // Don't crash the process (especially important for serverless runtimes).
+  console.error('[backend][db] Unexpected error on idle client', err);
 });
 
-// Initialize the database table
-const initDb = async () => {
-  try {
+let schemaInitPromise = null;
+const ensureSchemaInitialized = async () => {
+  // Prevent concurrent cold-start schema initializations.
+  if (schemaInitPromise) return schemaInitPromise;
+
+  schemaInitPromise = (async () => {
+    // In production we fail gracefully instead of trying to connect to localhost.
+    if (!databaseUrl && isProduction) {
+      throw new Error('DATABASE_URL is required in production.');
+    }
+
     await pool.query(`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
@@ -25,16 +46,14 @@ const initDb = async () => {
         password VARCHAR(255) NOT NULL
       )
     `);
-    console.log('Connected to the PostgreSQL database.');
-  } catch (err) {
-    console.error('Error initializing database', err);
-  }
+  })();
+
+  return schemaInitPromise;
 };
 
-if (process.env.NODE_ENV !== 'production') {
-  initDb();
-}
-
 module.exports = {
-  query: (text, params) => pool.query(text, params),
+  query: async (text, params) => {
+    await ensureSchemaInitialized();
+    return pool.query(text, params);
+  },
 };

@@ -2,14 +2,14 @@ import React, { useState, useEffect } from 'react';
 import Joyride, { STATUS } from 'react-joyride';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useData } from '../../contexts/DataContext';
-import { formatCurrency, calculateMonthlyBalance } from '../../utils/calculations';
+import { formatCurrency } from '../../utils/calculations';
 import { format, parseISO, startOfMonth, endOfMonth, eachMonthOfInterval } from 'date-fns';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import './ExpenseTracker.css';
 
 const ExpenseTracker = () => {
   const { isDarkMode } = useTheme();
-  const { transactions, categories, addTransaction, updateTransaction, deleteTransaction } = useData();
+  const { transactions, categories, addTransaction, deleteTransaction } = useData();
   const [showAddForm, setShowAddForm] = useState(false);
   const [viewMode, setViewMode] = useState('month'); // month, year, category
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));

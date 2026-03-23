@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import Joyride, { STATUS } from 'react-joyride';
 import { useOnboarding } from '../../contexts/OnboardingContext';
 import { useTheme } from '../../contexts/ThemeContext';

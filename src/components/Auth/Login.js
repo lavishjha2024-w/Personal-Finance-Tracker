@@ -3,6 +3,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
 import './Auth.css';
 
+const API_BASE_URL = (process.env.REACT_APP_API_URL || '').replace(/\/$/, '');
+
 const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -27,12 +29,12 @@ const Login = () => {
         const dropTimer = setTimeout(() => {
             setAnimationState('dropped');
 
-            const exitTimer = setTimeout(() => {
+            setTimeout(() => {
                 setAnimationState('exiting');
                 setShowForm(true);
                 sessionStorage.setItem('hasSeenAuthAnimation', 'true');
 
-                const doneTimer = setTimeout(() => {
+                setTimeout(() => {
                     setAnimationState('done');
                 }, 800);
             }, 800);
@@ -49,7 +51,7 @@ const Login = () => {
         setLoading(true);
 
         try {
-            const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/login`, {
+            const response = await fetch(`${API_BASE_URL}/api/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password })

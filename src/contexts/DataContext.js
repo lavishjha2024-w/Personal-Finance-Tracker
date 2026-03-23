@@ -14,7 +14,7 @@ export const DataProvider = ({ children }) => {
   const [assets, setAssets] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [goals, setGoals] = useState([]);
-  const [categories, setCategories] = useState([
+  const [categories] = useState([
     { id: 1, name: 'Food', type: 'expense', color: '#FF6B6B' },
     { id: 2, name: 'Transport', type: 'expense', color: '#4ECDC4' },
     { id: 3, name: 'Shopping', type: 'expense', color: '#95E1D3' },

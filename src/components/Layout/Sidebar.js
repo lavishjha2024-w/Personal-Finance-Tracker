@@ -1,8 +1,6 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useTheme } from '../../contexts/ThemeContext';
-import { AuthContext } from '../../contexts/AuthContext';
-import { useContext } from 'react';
 import './Sidebar.css';
 
 const Sidebar = ({ isOpen, closeSidebar }) => {

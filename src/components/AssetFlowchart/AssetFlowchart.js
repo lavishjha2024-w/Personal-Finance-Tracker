@@ -23,7 +23,6 @@ const AssetFlowchart = () => {
 
   const getAIRecommendation = (asset) => {
     const profitLossPercent = parseFloat(asset.profitLossPercent || 0);
-    const daysHeld = 30; // This would be calculated from purchase date
 
     let recommendation = 'HOLD';
     let reason = '';

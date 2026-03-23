@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useData } from '../../contexts/DataContext';
-import { formatCurrency, calculateMonthlyBalance } from '../../utils/calculations';
-import { format, parseISO, isToday, isYesterday, subDays } from 'date-fns';
+import { formatCurrency } from '../../utils/calculations';
+import { format, parseISO, subDays } from 'date-fns';
 import './Gamification.css';
 
 const Gamification = () => {
@@ -21,9 +21,10 @@ const Gamification = () => {
 
     // Check if yesterday was under budget, then count backwards
     for (let i = 0; i < 30; i++) {
+      const checkDateStr = format(checkDate, 'yyyy-MM-dd');
       const dateTransactions = transactions.filter(t => {
         const tDate = parseISO(t.date);
-        return format(tDate, 'yyyy-MM-dd') === format(checkDate, 'yyyy-MM-dd');
+        return format(tDate, 'yyyy-MM-dd') === checkDateStr;
       });
 
       const dailyExpenses = dateTransactions

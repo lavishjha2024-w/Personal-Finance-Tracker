@@ -6,7 +6,7 @@ import './Portfolio.css';
 
 const Portfolio = () => {
   const { isDarkMode } = useTheme();
-  const { assets, addAsset, updateAsset, deleteAsset } = useData();
+  const { assets, addAsset, deleteAsset } = useData();
   const [showAddForm, setShowAddForm] = useState(false);
   const [showIntegrationModal, setShowIntegrationModal] = useState(false);
   const [formData, setFormData] = useState({
