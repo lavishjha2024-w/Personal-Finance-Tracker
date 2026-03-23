@@ -50,6 +50,10 @@ const Signup = () => {
         setLoading(true);
 
         try {
+            if (!API_BASE_URL) {
+                throw new Error('REACT_APP_API_URL is not configured');
+            }
+
             if (!email || !password || !username) {
                 throw new Error('Please fill in all fields');
             }

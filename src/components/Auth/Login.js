@@ -50,6 +50,10 @@ const Login = () => {
         setLoading(true);
 
         try {
+            if (!API_BASE_URL) {
+                throw new Error('REACT_APP_API_URL is not configured');
+            }
+
             const { data } = await axios.post(
                 `${API_BASE_URL}/api/login`,
                 { email, password }
