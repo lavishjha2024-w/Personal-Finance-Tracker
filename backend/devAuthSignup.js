@@ -25,10 +25,9 @@ async function findAuthUserIdByEmail(adminClient, email) {
 async function devSignupConfirmedUser(supabase, { username, email, password }) {
   const existingId = await findAuthUserIdByEmail(supabase, email);
   if (existingId) {
-    const { error: delErr } = await supabase.auth.admin.deleteUser(existingId);
-    if (delErr) {
-      throw delErr;
-    }
+    const error = new Error('User already exists');
+    error.code = 'USER_EXISTS';
+    throw error;
   }
 
   const { data, error } = await supabase.auth.admin.createUser({

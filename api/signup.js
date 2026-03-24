@@ -82,10 +82,9 @@ module.exports = async (req, res) => {
   try {
     const existingId = await findAuthUserIdByEmail(supabase, email);
     if (existingId) {
-      const { error: delErr } = await supabase.auth.admin.deleteUser(existingId);
-      if (delErr) {
-        throw delErr;
-      }
+      return res.status(409).json({
+        error: 'User already exists',
+      });
     }
 
     const { data, error } = await supabase.auth.admin.createUser({

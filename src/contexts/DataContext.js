@@ -1,4 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
+import { AuthContext } from './AuthContext';
 
 const DataContext = createContext();
 
@@ -11,6 +12,7 @@ export const useData = () => {
 };
 
 export const DataProvider = ({ children }) => {
+  const { user } = useContext(AuthContext);
   const [assets, setAssets] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [goals, setGoals] = useState([]);
@@ -25,36 +27,54 @@ export const DataProvider = ({ children }) => {
     { id: 8, name: 'Investment Returns', type: 'income', color: '#9B59B6' },
   ]);
   const [learnedMappings, setLearnedMappings] = useState({});
+  const [isHydrated, setIsHydrated] = useState(false);
+  const storagePrefix = user?.id ? `pft:${user.id}` : null;
 
-  // Load data from localStorage on mount
+  // Load user-scoped data from localStorage whenever authenticated user changes.
   useEffect(() => {
-    const savedAssets = localStorage.getItem('assets');
-    const savedTransactions = localStorage.getItem('transactions');
-    const savedGoals = localStorage.getItem('goals');
-    const savedMappings = localStorage.getItem('learnedMappings');
+    setIsHydrated(false);
 
-    if (savedAssets) setAssets(JSON.parse(savedAssets));
-    if (savedTransactions) setTransactions(JSON.parse(savedTransactions));
-    if (savedGoals) setGoals(JSON.parse(savedGoals));
-    if (savedMappings) setLearnedMappings(JSON.parse(savedMappings));
-  }, []);
+    if (!storagePrefix) {
+      setAssets([]);
+      setTransactions([]);
+      setGoals([]);
+      setLearnedMappings({});
+      setIsHydrated(true);
+      return;
+    }
 
-  // Save data to localStorage whenever it changes
+    const savedAssets = localStorage.getItem(`${storagePrefix}:assets`);
+    const savedTransactions = localStorage.getItem(`${storagePrefix}:transactions`);
+    const savedGoals = localStorage.getItem(`${storagePrefix}:goals`);
+    const savedMappings = localStorage.getItem(`${storagePrefix}:learnedMappings`);
+
+    setAssets(savedAssets ? JSON.parse(savedAssets) : []);
+    setTransactions(savedTransactions ? JSON.parse(savedTransactions) : []);
+    setGoals(savedGoals ? JSON.parse(savedGoals) : []);
+    setLearnedMappings(savedMappings ? JSON.parse(savedMappings) : {});
+    setIsHydrated(true);
+  }, [storagePrefix]);
+
+  // Save user-scoped data only after hydration is complete.
   useEffect(() => {
-    localStorage.setItem('assets', JSON.stringify(assets));
-  }, [assets]);
+    if (!storagePrefix || !isHydrated) return;
+    localStorage.setItem(`${storagePrefix}:assets`, JSON.stringify(assets));
+  }, [assets, storagePrefix, isHydrated]);
 
   useEffect(() => {
-    localStorage.setItem('transactions', JSON.stringify(transactions));
-  }, [transactions]);
+    if (!storagePrefix || !isHydrated) return;
+    localStorage.setItem(`${storagePrefix}:transactions`, JSON.stringify(transactions));
+  }, [transactions, storagePrefix, isHydrated]);
 
   useEffect(() => {
-    localStorage.setItem('goals', JSON.stringify(goals));
-  }, [goals]);
+    if (!storagePrefix || !isHydrated) return;
+    localStorage.setItem(`${storagePrefix}:goals`, JSON.stringify(goals));
+  }, [goals, storagePrefix, isHydrated]);
 
   useEffect(() => {
-    localStorage.setItem('learnedMappings', JSON.stringify(learnedMappings));
-  }, [learnedMappings]);
+    if (!storagePrefix || !isHydrated) return;
+    localStorage.setItem(`${storagePrefix}:learnedMappings`, JSON.stringify(learnedMappings));
+  }, [learnedMappings, storagePrefix, isHydrated]);
 
   const addAsset = (asset) => {
     setAssets([...assets, { ...asset, id: Date.now() }]);

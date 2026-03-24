@@ -77,6 +77,12 @@ app.post('/api/signup', async (req, res) => {
     } catch (err) {
         console.error("❌ Signup error:", err);
 
+        if (err.code === 'USER_EXISTS') {
+            return res.status(409).json({
+                error: 'User already exists'
+            });
+        }
+
         return res.status(500).json({
             error: 'Signup failed',
             details: err.message
