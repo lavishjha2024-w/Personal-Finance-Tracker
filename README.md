@@ -3,8 +3,8 @@
 A full-stack personal finance application for tracking income, expenses, assets, goals, and financial behavior with an interactive dashboard, guided onboarding, and smart insights.
 
 ## Live Demo
+https://personal-finance-tracker-flax-kappa.vercel.app/login
 
-[https://fin-tracker-test-ruddy.vercel.app](https://fin-tracker-test-ruddy.vercel.app)
 
 ## What This App Includes
 
